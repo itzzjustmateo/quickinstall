@@ -106,7 +106,9 @@ const GridContainer = styled.div`
 `;
 
 const SearchInputRow = styled.div`
-    ${tw`relative flex-1 md:col-span-2 group`};
+    ${tw`relative flex-1 md:col-span-2`};
+    &.group:hover {
+    }
 `;
 
 const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
@@ -767,7 +769,7 @@ export default () => {
                                                     />
                                                 </div>
                                                 <div className="flex-1 min-w-0 pr-2">
-                                                    <h3 className="text-base font-bold text-white mb-1 truncate leading-tight group-hover:text-indigo-400 transition-colors">{plugin.title}</h3>
+                                                    <h3 className="text-base font-bold text-white mb-1 truncate leading-tight hover:text-indigo-400 transition-colors">{plugin.title}</h3>
                                                     <div className="flex items-center gap-2 text-neutral-500 text-[11px] font-bold uppercase tracking-wider">
                                                         <span>{plugin.author}</span>
                                                     </div>
