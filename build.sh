@@ -6,26 +6,26 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Files and directories to exclude from the zip
-EXCLUDE=(
-    "--exclude=.git"
-    "--exclude=.gitignore"
-    "--exclude=*.sh"
-    "--exclude=*.bat"
-    "--exclude=*.ps1"
-    "--exclude=README.md"
-    "--exclude=LICENSE"
-    "--exclude=.blueprint"
-    "--exclude=node_modules"
-)
+# Remove old build if exists
+rm -f quickinstall.blueprint
 
-# Create the zip
+# Create the zip (Blueprint expects a zip file)
 zip -r quickinstall.zip \
-    "${EXCLUDE[@]}" \
+    --exclude=".git/*" \
+    --exclude=".gitignore" \
+    --exclude="*.sh" \
+    --exclude="*.bat" \
+    --exclude="*.ps1" \
+    --exclude="README.md" \
+    --exclude="LICENSE" \
+    --exclude=".blueprint/*" \
+    --exclude="node_modules/*" \
     app/ \
     conf.yml \
     routes/ \
     resources/
 
+# Rename to .blueprint (Blueprint expects .blueprint extension)
+mv quickinstall.zip quickinstall.blueprint
+
 echo "Created quickinstall.blueprint"
-echo User action required to make it .blueprint format

@@ -34,11 +34,3 @@ requests:
 
 database:
   migrations: ""
-
-navigation:
-  - name: "Plugins"
-    icon: "puzzle"
-    path: "/plugins"
-    type: "server"
-    component: "server/quickinstall/QuickInstallContainer"
-    admin: false
