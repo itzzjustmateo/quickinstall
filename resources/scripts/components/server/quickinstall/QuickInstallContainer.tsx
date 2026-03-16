@@ -315,14 +315,107 @@ interface UnifiedVersion {
     loaders: string[];
 }
 
+const PLUGIN_COMPATIBLE_EGGS = [
+    'paper', 'spigot', 'bukkit', 'purpur', 'travertine', 'servers', 'mohist', 'arclight', 'yatopia'
+];
+
+const PROXY_EGGS = [
+    'velocity', 'waterfall', 'bungeecord', 'waterdog', 'travertine'
+];
+
+const NON_PLUGIN_EGGS = [
+    'fabric', 'forge', 'crucible'
+];
+
+function getServerInfo(eggName: string, version: string): { supportsPlugins: boolean; loader: string } {
+    if (!eggName || !version) return { supportsPlugins: false, loader: '' };
+    
+    const eggLower = eggName.toLowerCase();
+    const versionLower = version.toLowerCase();
+    
+    if (NON_PLUGIN_EGGS.some(e => eggLower.includes(e))) {
+        return { supportsPlugins: false, loader: '' };
+    }
+    
+    if (PROXY_EGGS.some(e => eggLower.includes(e))) {
+        if (eggLower.includes('velocity') || versionLower.includes('velocity')) {
+            return { supportsPlugins: true, loader: 'velocity' };
+        }
+        if (eggLower.includes('waterfall') || versionLower.includes('waterfall')) {
+            return { supportsPlugins: true, loader: 'waterfall' };
+        }
+        if (eggLower.includes('bungeecord') || versionLower.includes('bungeecord')) {
+            return { supportsPlugins: true, loader: 'bungeecord' };
+        }
+        return { supportsPlugins: true, loader: 'velocity' };
+    }
+    
+    if (PLUGIN_COMPATIBLE_EGGS.some(e => eggLower.includes(e))) {
+        if (eggLower.includes('paper') || versionLower.includes('paper')) {
+            return { supportsPlugins: true, loader: 'paper' };
+        }
+        if (eggLower.includes('purpur')) {
+            return { supportsPlugins: true, loader: 'purpur' };
+        }
+        if (eggLower.includes('spigot') || eggLower.includes('bukkit')) {
+            return { supportsPlugins: true, loader: 'spigot' };
+        }
+        return { supportsPlugins: true, loader: 'paper' };
+    }
+    
+    if (versionLower.includes('fabric') || versionLower.includes('forge')) {
+        return { supportsPlugins: false, loader: '' };
+    }
+    
+    if (versionLower.includes('bedrock') || versionLower.includes('pe')) {
+        return { supportsPlugins: false, loader: '' };
+    }
+    
+    return { supportsPlugins: true, loader: 'paper' };
+}
+
+const NotSupportedMessage = styled.div`
+    ${tw`flex flex-col items-center justify-center py-24 gap-4 text-center`};
+`;
+
 export default () => {
     const server = ServerContext.useStoreState(state => state.server.data);
+    
+    const serverInfo = useMemo(() => {
+        if (!server) return { supportsPlugins: false, loader: '' };
+        return getServerInfo(server.egg?.name || '', server.version || '');
+    }, [server?.egg?.name, server?.version]);
+
+    if (!serverInfo.supportsPlugins) {
+        return (
+            <div className="min-h-screen text-neutral-200 font-sans relative overflow-x-hidden" style={{ background: '#07080c' }}>
+                <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(99,102,241,0.15),transparent_50%)] pointer-events-none" />
+                <div className="max-w-7xl mx-auto p-4 md:p-8">
+                    <NotSupportedMessage>
+                        <FontAwesomeIcon icon={faCube} className="text-neutral-700 text-5xl mb-2" />
+                        <h3 className="text-xl font-bold text-white mb-2">Plugins Not Supported</h3>
+                        <p className="text-neutral-500 max-w-md text-sm">
+                            This server type doesn't support plugins. QuickInstall works with Paper, Spigot, Bukkit, Purpur, and other plugin-compatible server jars.
+                        </p>
+                        <p className="text-neutral-600 text-xs mt-2">
+                            Current server: {server?.egg?.name || 'Unknown'} ({server?.version || 'Unknown version'})
+                        </p>
+                    </NotSupportedMessage>
+                </div>
+            </div>
+        );
+    }
+
     const [platform, setPlatform] = useState<Platform>('modrinth');
     const [activeTab, setActiveTab] = useState<'browse' | 'manage'>('browse');
     const [installedPlugins, setInstalledPlugins] = useState<InstalledPlugin[]>([]);
     const [loadingInstalled, setLoadingInstalled] = useState(false);
     const [query, setQuery] = useState('');
-    const [filters, setFilters] = useState({ category: '', loader: '', sort: 'relevance' });
+    const [filters, setFilters] = useState({ 
+        category: '', 
+        loader: serverInfo.loader, 
+        sort: 'relevance' 
+    });
     const [plugins, setPlugins] = useState<UnifiedPlugin[]>([]);
     const [loading, setLoading] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
@@ -470,10 +563,16 @@ export default () => {
     }, [page]);
 
     useEffect(() => {
-        setFilters({ category: '', loader: '', sort: 'relevance' });
+        setFilters(prev => ({ ...prev, category: '', sort: 'relevance' }));
         setQuery('');
         setPage(0);
     }, [platform]);
+
+    useEffect(() => {
+        if (serverInfo.loader) {
+            setFilters(prev => ({ ...prev, loader: serverInfo.loader }));
+        }
+    }, [serverInfo.loader]);
 
     const loadVersions = async (plugin: UnifiedPlugin) => {
         setSelectedPlugin(plugin);

@@ -3,7 +3,7 @@ info:
   identifier: "quickinstall"
   description: "Quickly browse and install plugins"
   version: "1.0.0"
-  target: "beta-2026-01"
+  target: "beta"
   author: "fernsehheft"
   icon: "resources/icon.png"
   website: ""
@@ -37,6 +37,7 @@ database:
 
 navigation:
   - name: "Plugins"
+    icon: "puzzle"
     path: "/plugins"
     type: "server"
     component: "server/quickinstall/QuickInstallContainer"
