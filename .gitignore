@@ -25,3 +25,8 @@ Thumbs.db
 /.env
 /.env.*
 .env.*.local
+
+# Blueprint/ Development files
+*.blueprint
+quickinstall.blueprint
+quickbrowse.blueprint

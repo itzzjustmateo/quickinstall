@@ -1,36 +1,43 @@
 info:
-  name: "Modrinth Browser"
-  identifier: "modrinthbrowser"
-  description: "Browse and download Modrinth plugins directly from the server panel."
+  name: "QuickInstall"
+  identifier: "quickinstall"
+  description: "Quickly browse and install plugins"
   version: "1.0.0"
   target: "beta-2026-01"
   author: "fernsehheft"
-  icon: 'resources/icon.png'
-  website: ''
+  icon: "resources/icon.png"
+  website: ""
 
 admin:
-  view: 'resources/views/view.blade.php'
-  controller: ''
-  css: ''
-  wrapper: ''
+  view: "resources/views/view.blade.php"
+  controller: ""
+  css: ""
+  wrapper: ""
 
 dashboard:
-  css: ''
-  wrapper: ''
-  components: 'resources/scripts/components'
+  css: ""
+  wrapper: ""
+  components: "resources/scripts/components"
 
 data:
-  directory: ''
-  public: ''
-  console: ''
+  directory: ""
+  public: ""
+  console: ""
 
 requests:
-  views: ''
-  app: 'app'
+  views: ""
+  app: "app"
   routers:
-    application: ''
-    client: ''
-    web: 'routes/web.php'
+    application: ""
+    client: ""
+    web: "routes/web.php"
 
 database:
-  migrations: ''
+  migrations: ""
+
+navigation:
+  - name: "Plugins"
+    path: "/plugins"
+    type: "server"
+    component: "server/quickinstall/QuickInstallContainer"
+    admin: false

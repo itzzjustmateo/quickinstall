@@ -1,6 +1,6 @@
 <?php
 
-namespace Pterodactyl\BlueprintFramework\Extensions\modrinthbrowser;
+namespace Pterodactyl\BlueprintFramework\Extensions\quickinstall;
 
 use Illuminate\Http\Request;
 use Pterodactyl\Models\Server;
@@ -55,8 +55,8 @@ class PluginController extends Controller
             $content = $response->body();
 
             // 4. Save to Server via Wings (DaemonFileRepository)
-            // We save to /plugins/filename.jar
-            $path = '/plugins/' . $filename;
+            // We save to /plugins/panel-filename.jar to track panel-installed plugins
+            $path = '/plugins/panel-' . $filename;
 
             // Put content
             $this->fileRepository->setServer($server)->putContent($path, $content);
@@ -76,6 +76,72 @@ class PluginController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An unexpected error occurred.',
+                'error' => $ex->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a list of installed plugins with the panel- prefix.
+     */
+    public function getInstalled(Request $request)
+    {
+        $request->validate([
+            'serverUuid' => 'required|string|exists:servers,uuid',
+        ]);
+
+        $server = Server::where('uuid', $request->input('serverUuid'))->firstOrFail();
+        $this->authorize('file.list', $server);
+
+        try {
+            $files = $this->fileRepository->setServer($server)->getDirectory('/plugins');
+            
+            $installed = [];
+            foreach ($files as $file) {
+                if (str_starts_with($file['name'], 'panel-')) {
+                    $installed[] = [
+                        'name' => $file['name'],
+                        'size' => $file['size'],
+                        'mimetype' => $file['mimetype'],
+                        'modified_at' => $file['modified_at'],
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'plugins' => $installed
+            ]);
+        } catch (\Exception $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to list plugins.',
+                'error' => $ex->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an installed plugin.
+     */
+    public function deletePlugin(Request $request)
+    {
+        $request->validate([
+            'filename' => 'required|string|starts_with:panel-',
+            'serverUuid' => 'required|string|exists:servers,uuid',
+        ]);
+
+        $server = Server::where('uuid', $request->input('serverUuid'))->firstOrFail();
+        $this->authorize('file.delete', $server);
+
+        try {
+            $this->fileRepository->setServer($server)->deleteFiles('/plugins', [$request->input('filename')]);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete plugin.',
                 'error' => $ex->getMessage()
             ], 500);
         }
