@@ -1,6 +1,6 @@
-# Modrinth Browser Extension for Pterodactyl
+# QuickInstall for Blueprint
 
-This is an open-source **Blueprint extension** for Pterodactyl that adds a handy **Plugins** tab right inside your server panel. With it, you can browse, search, and install plugins straight from **Modrinth** — no need to leave the dashboard.
+QuickInstall is a fork of an open-source **Blueprint extension** for Pterodactyl that switches to more modern APIs and adds support for more Provider. With it, you can browse, search, and install plugins from **Modrinth, SpigotMC, Bukkit, CurseForge and HangarMC** without needing to leave the panel.
 
 No more downloading files by hand or uploading things manually. Just pick what you need, hit install, and you’re set.
 
@@ -8,12 +8,11 @@ No more downloading files by hand or uploading things manually. Just pick what y
 
 ## Features
 
-* 📚 Browse Modrinth plugins directly from your Pterodactyl Panel.
-* 🔍 Search and filter by project name, Minecraft version, and loader (support for more like Bukkit, Spigot, CurseForge coming soon).
-* ⬇️ One-click download & install.
-* 🔒 Backend checks server permissions before installing.
-* 🎨 Modern React-based UI for a smooth experience.
-* 🆓 100% free and open source.
+- 📚 Browse Modrinth plugins directly from your Pterodactyl Panel.
+- 🔍 Search and filter by project name, Minecraft version, and loader.
+- ⬇️ One-click download & install.
+- 🔒 Backend checks server permissions before installing.
+- 🆓 100% free and open source.
 
 ---
 
@@ -22,7 +21,7 @@ No more downloading files by hand or uploading things manually. Just pick what y
 The extension uses the usual Blueprint project structure:
 
 ```
-ModrinthBrowser/
+quickinstall/
 ├── conf.yml
 ├── app/
 │   └── Http/
@@ -42,10 +41,10 @@ ModrinthBrowser/
 
 ### Quick Overview:
 
-* `conf.yml`: Extension metadata & config
-* `PluginController.php`: Handles download & validation
-* `ModrinthBrowserContainer.tsx`: UI code (React)
-* `server.php`: Blueprint routes
+- `conf.yml`: Extension metadata & config
+- `PluginController.php`: Handles download & validation
+- `ModrinthBrowserContainer.tsx`: UI code (React)
+- `server.php`: Blueprint routes
 
 ---
 
@@ -53,12 +52,12 @@ ModrinthBrowser/
 
 To get this extension running, you'll need:
 
-* The Pterodactyl Panel with Blueprint support
-* Blueprint installed
-* PHP 8 or newer
-* Outbound network access to:
-  * `api.modrinth.com`
-  * `cdn.modrinth.com`
+- The Pterodactyl Panel with Blueprint support
+- Blueprint installed
+- PHP 8 or newer
+- Outbound network access to:
+  - `api.modrinth.com`
+  - `cdn.modrinth.com`
 
 ---
 
@@ -72,10 +71,10 @@ The installation works best with the Blueprint package manager.
 
 1. Go to this repo’s GitHub Releases page.
 2. Download the most recent **LTS** release:
-    ```
-    modrinthbrowser.blueprint
-    ```
-    If the download has a version in the filename, you can rename it to the above if you prefer.
+   ```
+   modrinthbrowser.blueprint
+   ```
+   If the download has a version in the filename, you can rename it to the above if you prefer.
 
 ---
 
@@ -90,6 +89,7 @@ Put the `modrinthbrowser.blueprint` file in your Pterodactyl root folder:
 You can upload using SFTP, SCP, your file manager, or (less ideally) FTP.
 
 Example:
+
 ```
 scp modrinthbrowser.blueprint user@server:/var/www/pterodactyl/
 ```
@@ -100,15 +100,15 @@ scp modrinthbrowser.blueprint user@server:/var/www/pterodactyl/
 
 1. SSH into your server.
 2. Run:
-    ```
-    cd /var/www/pterodactyl
-    blueprint -i modrinthbrowser.blueprint
-    ```
+   ```
+   cd /var/www/pterodactyl
+   blueprint -i modrinthbrowser.blueprint
+   ```
 3. After installing, clear caches and rebuild assets if necessary:
-    ```
-    php artisan optimize:clear
-    php artisan view:clear
-    ```
+   ```
+   php artisan optimize:clear
+   php artisan view:clear
+   ```
 4. If your setup requires it, restart your panel services.
 
 ---
@@ -116,12 +116,14 @@ scp modrinthbrowser.blueprint user@server:/var/www/pterodactyl/
 ## Uninstalling
 
 To remove the extension, run:
+
 ```
 cd /var/www/pterodactyl
 blueprint -remove modrinthbrowser.blueprint
 ```
 
 Don't forget to clear the cache afterwards:
+
 ```
 php artisan optimize:clear
 ```
@@ -135,19 +137,19 @@ Just uninstall the old version and install the new one. Here’s a quick process
 ### Recommended Update Process
 
 1. Remove the old version:
-    ```
-    blueprint -remove modrinthbrowser.blueprint
-    ```
+   ```
+   blueprint -remove modrinthbrowser.blueprint
+   ```
 2. Download the latest LTS release from GitHub.
 3. Upload the new file to `/var/www/pterodactyl`.
 4. Install again:
-    ```
-    blueprint -i modrinthbrowser.blueprint
-    ```
+   ```
+   blueprint -i modrinthbrowser.blueprint
+   ```
 5. Clear cache:
-    ```
-    php artisan optimize:clear
-    ```
+   ```
+   php artisan optimize:clear
+   ```
 6. Restart your panel services if needed.
 
 ---
@@ -157,29 +159,34 @@ Just uninstall the old version and install the new one. Here’s a quick process
 ### Frontend
 
 The panel interface lives here:
+
 ```
 resources/scripts/components/server/modrinth/ModrinthBrowserContainer.tsx
 ```
+
 It’s all React + Tailwind, talking to the backend and Modrinth’s API.
 
 ### Backend
 
 This is the controller doing the heavy lifting:
+
 ```
 app/Http/Controllers/Extensions/ModrinthBrowser/PluginController.php
 ```
+
 It:
-* Checks and validates requests
-* Verifies your user/server has the right permissions
-* Streams plugin files securely
-* Drops them in the correct server folder
+
+- Checks and validates requests
+- Verifies your user/server has the right permissions
+- Streams plugin files securely
+- Drops them in the correct server folder
 
 ### Security
 
-* Enforces `file.create` permission checks.
-* Validates all project/version IDs.
-* Prevents directory traversal attacks.
-* Uses Pterodactyl’s built-in storage APIs.
+- Enforces `file.create` permission checks.
+- Validates all project/version IDs.
+- Prevents directory traversal attacks.
+- Uses Pterodactyl’s built-in storage APIs.
 
 ---
 
@@ -206,10 +213,11 @@ You’ll get hot reloads for most changes.
 Pull requests, bug reports, and feature ideas are all welcome! Contributions of any size help keep this project healthy.
 
 Typical ways to help:
-* Reporting bugs
-* Fixing typos or improving docs
-* Submitting pull requests
-* Suggesting new features
+
+- Reporting bugs
+- Fixing typos or improving docs
+- Submitting pull requests
+- Suggesting new features
 
 Please follow the usual GitHub process and check for open issues first.
 
@@ -223,7 +231,7 @@ Open source, of course! See the `LICENSE` file for specifics.
 
 ## Acknowledgements
 
-* Modrinth API & team
-* The Pterodactyl contributors
-* Blueprint Framework maintainers
-* Everyone else who’s pitched in along the way!
+- Modrinth API & team
+- The Pterodactyl contributors
+- Blueprint Framework maintainers
+- Everyone else who’s pitched in along the way!
