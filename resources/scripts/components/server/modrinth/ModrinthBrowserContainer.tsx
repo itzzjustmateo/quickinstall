@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { ServerContext } from '@/state/server';
-import http from '@/api/http';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSlidersH, faDownload, faHeart, faClock, faHdd, faCloudDownloadAlt, faSpinner, faCheck, faExclamationCircle, faTimes, faCube, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import debounce from 'lodash-es/debounce';
 import tw from 'twin.macro';
 import styled from 'styled-components/macro';
-
-type Platform = 'modrinth' | 'spigotmc';
+import type { Platform, UnifiedPlugin, UnifiedVersion } from '@/services/modrinth/types';
+import { searchModrinthProjects } from '@/services/modrinth/search';
+import { getProjectVersions } from '@/services/modrinth/versions';
+import { downloadPluginToServer } from '@/services/modrinth/downloads';
 
 const GlassPanel = styled.div`
     ${tw`rounded-2xl p-6 mb-8`};
@@ -182,54 +183,10 @@ const loadersList = [
     'paper', 'purpur', 'spigot', 'bukkit', 'folia', 'velocity', 'waterfall', 'bungeecord'
 ];
 
-interface UnifiedPlugin {
-    id: string;
-    title: string;
-    description: string;
-    author: string;
-    downloads: number;
-    icon_url: string;
-    categories: string[];
-    date_modified: string;
-    platform: Platform;
-}
-
-interface ModrinthVersion {
-    id: string;
-    name: string;
-    version_type: string;
-    date_published: string;
-    downloads: number;
-    files: {
-        url: string;
-        filename: string;
-        primary: boolean;
-        size: number;
-    }[];
-    game_versions: string[];
-    loaders: string[];
-}
-
 interface SpigotVersion {
     id: number;
     name: string;
     releaseDate: number;
-}
-
-interface UnifiedVersion {
-    id: string;
-    name: string;
-    version_type: string;
-    date_published: string;
-    downloads: number;
-    files: {
-        url: string;
-        filename: string;
-        primary: boolean;
-        size: number;
-    }[];
-    game_versions: string[];
-    loaders: string[];
 }
 
 export default () => {
@@ -252,35 +209,7 @@ export default () => {
     const [availableLoaders, setAvailableLoaders] = useState<string[]>([]);
 
     const searchModrinth = async (q: string, offset: number): Promise<{ plugins: UnifiedPlugin[], total: number }> => {
-        const facets = [['project_type:plugin']];
-        if (filters.category) facets.push([`categories:${filters.category}`]);
-        if (filters.loader) facets.push([`categories:${filters.loader}`]);
-
-        const params = new URLSearchParams({
-            facets: JSON.stringify(facets),
-            limit: '12',
-            offset: offset.toString(),
-            index: filters.sort,
-        });
-
-        if (q) params.append('query', q);
-
-        const res = await fetch(`https://api.modrinth.com/v2/search?${params.toString()}`);
-        const data = await res.json();
-
-        const plugins: UnifiedPlugin[] = data.hits.map((p: any) => ({
-            id: p.project_id,
-            title: p.title,
-            description: p.description,
-            author: p.author,
-            downloads: p.downloads,
-            icon_url: p.icon_url,
-            categories: p.categories,
-            date_modified: p.date_modified,
-            platform: 'modrinth' as Platform,
-        }));
-
-        return { plugins, total: data.total_hits };
+        return searchModrinthProjects({ query: q, offset, filters });
     };
 
     const searchSpigot = async (q: string, offset: number): Promise<{ plugins: UnifiedPlugin[], total: number }> => {
@@ -303,7 +232,7 @@ export default () => {
         const res = await fetch(url);
         const data = await res.json();
 
-        const plugins: UnifiedPlugin[] = (Array.isArray(data) ? data : []).map((p: any) => ({
+        const plugins: UnifiedPlugin[] = (Array.isArray(data) ? data : []).map((p: Record<string, unknown>) => ({
             id: p.id.toString(),
             title: p.name,
             description: p.tag || '',
@@ -365,11 +294,10 @@ export default () => {
 
         try {
             if (plugin.platform === 'modrinth') {
-                const res = await fetch(`https://api.modrinth.com/v2/project/${plugin.id}/version`);
-                const data: ModrinthVersion[] = await res.json();
-                setVersions(data);
-                setAvailableGameVersions([...new Set(data.flatMap(v => v.game_versions))].sort().reverse());
-                setAvailableLoaders([...new Set(data.flatMap(v => v.loaders))]);
+                const result = await getProjectVersions(plugin.id);
+                setVersions(result.versions);
+                setAvailableGameVersions(result.availableGameVersions);
+                setAvailableLoaders(result.availableLoaders);
             } else {
                 const res = await fetch(`https://api.spiget.org/v2/resources/${plugin.id}/versions?size=20&sort=-releaseDate`);
                 const data: SpigotVersion[] = await res.json();
@@ -417,7 +345,7 @@ export default () => {
         btn.classList.add('opacity-75', 'cursor-not-allowed');
 
         try {
-            await http.post(`/extensions/modrinthbrowser/download`, {
+            await downloadPluginToServer({
                 downloadUrl: file.url,
                 filename: file.filename,
                 serverUuid: server.uuid
@@ -430,11 +358,12 @@ export default () => {
                 btn.classList.replace('bg-green-600', 'bg-indigo-600');
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
             }, 3000);
-        } catch (e: any) {
+        } catch (e) {
             console.error(e);
             btn.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error`;
             btn.classList.replace('bg-indigo-600', 'bg-red-600');
-            alert('Failed to download: ' + (e.response?.data?.message || e.message));
+            const err = e as { response?: { data?: { message?: string } }; message?: string };
+            alert('Failed to download: ' + (err.response?.data?.message || err.message || 'Unknown error'));
             setTimeout(() => {
                 btn.innerHTML = originalText;
                 btn.classList.replace('bg-red-600', 'bg-indigo-600');

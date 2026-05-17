@@ -1,0 +1,12 @@
+{
+  "name": "modrinthbrowser",
+  "private": true,
+  "version": "1.2.2",
+  "description": "Modrinth Browser - Blueprint extension for Pterodactyl",
+  "dependencies": {
+    "@modrinth/api-client": "^0.5.0"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0"
+  }
+}
